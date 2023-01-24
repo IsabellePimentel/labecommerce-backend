@@ -95,7 +95,7 @@ export const createPurchase = (userId: string, productId: string, quantity: numb
 
     purchases.push(newPurchase)
 
-    console.log("Compra realizada com sucesso!")
+    console.log("Compra realizada com sucesso")
     console.table(purchases)
 }
 
