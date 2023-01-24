@@ -28,12 +28,12 @@ export const purchases:TPurchase[]=[{
     userId: "01",
     productId: "01",
     quantity: 2,
-    totalPrice: 30.22,
+    totalPrice: 60.44,
 },{
     userId: "02",
     productId: "01",
     quantity: 1,
-    totalPrice: 40.44,
+    totalPrice: 30.22,
 }
 
 ]
