@@ -69,6 +69,7 @@ ORDER BY price ASC
 limit 0, 20
 ;
 
+
 SELECT * FROM products
 WHERE price BETWEEN 20 AND 30
 ORDER BY price ASC;
@@ -81,6 +82,7 @@ CREATE TABLE purchases (
     buyer_id TEXT NOT NULL, 
     FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
+
 
 INSERT INTO purchases (id, total_price, paid, delivered_at, buyer_id)
 VALUES 
@@ -100,3 +102,20 @@ SELECT * FROM purchases
 INNER JOIN users ON purchases.buyer_id = users.id
 WHERE users.id = "02";
 
+CREATE TABLE purchases_products (
+    purchase_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+INSERT INTO purchases_products (purchase_id, product_id, quantity)
+VALUES 
+    ("01", "01", 2), 
+    ("02", "03", 1), 
+    ("03", "04", 1);
+
+SELECT * FROM purchases_products pp 
+INNER JOIN purchases pu ON pp.purchase_id = pu.id
+INNER JOIN products pr ON pp.product_id = pr.id;
