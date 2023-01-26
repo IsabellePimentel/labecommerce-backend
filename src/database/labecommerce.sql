@@ -1,3 +1,4 @@
+-- Active: 1673873949173@@127.0.0.1@3306
 
 CREATE Table
     users(
@@ -68,8 +69,34 @@ ORDER BY price ASC
 limit 0, 20
 ;
 
-
 SELECT * FROM products
 WHERE price BETWEEN 20 AND 30
 ORDER BY price ASC;
+
+CREATE TABLE purchases (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL, 
+    total_price REAL NOT NULL,
+    paid INTEGER NOT NULL, 
+    delivered_at TEXT, 
+    buyer_id TEXT NOT NULL, 
+    FOREIGN KEY (buyer_id) REFERENCES users(id)
+);
+
+INSERT INTO purchases (id, total_price, paid, delivered_at, buyer_id)
+VALUES 
+    ('01', 60, 0, NULL, '01'), 
+    ('02', 80, 1, NULL, '01'), 
+    ('03', 50, 0, NULL, '02'), 
+    ('04', 70, 0, NULL, '02'), 
+    ('05', 200, 0, NULL, '03'), 
+    ('06', 80, 0, NULL, '03');
+
+UPDATE purchases
+SET delivered_at = DATETIME('now'),
+    paid = 1
+WHERE id = '02';
+
+SELECT * FROM purchases
+INNER JOIN users ON purchases.buyer_id = users.id
+WHERE users.id = "02";
 
