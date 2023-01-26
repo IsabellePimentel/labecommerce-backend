@@ -8,11 +8,17 @@ export type TProduct= {
     id: string;
     name: string;
     price: number;
-    category: string;
+    category: Category;
 }
 export type TPurchase = {
     userId: string;
     productId: string;
     quantity: number;
     totalPrice: number;
+}
+
+export enum Category {
+    FOOD = "Comida",
+    SHOES= "Roupas",
+    ACESSORIES = "Acessórios"
 }
