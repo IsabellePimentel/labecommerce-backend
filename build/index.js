@@ -17,27 +17,79 @@ app.get('/ping', (req, res) => {
     res.send('Pong!');
 });
 app.get('/users', (req, res) => {
-    const users = (0, database_1.getAllUsers)();
-    res.status(200).send(users);
+    try {
+        let users = (0, database_1.getAllUsers)();
+        res.status(200).send(users);
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.post('/users', (req, res) => {
-    const { id, email, password } = req.body;
-    (0, database_2.createUser)(id, email, password);
-    res.status(201).send("Cliente cadastrado com sucesso!");
+    try {
+        const { id, email, password } = req.body;
+        let errors = validaUserBody(id, email);
+        if (errors.length > 0) {
+            console.log(errors);
+            res.status(400).send(errors);
+        }
+        else {
+            (0, database_2.createUser)(id, email, password);
+            res.status(201).send("Cliente cadastrado com sucesso!");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.get('/products', (req, res) => {
-    const produtos = (0, database_2.getAllProducts)();
-    res.status(200).send(produtos);
+    try {
+        let products = (0, database_2.getAllProducts)();
+        res.status(200).send(products);
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.post('/products', (req, res) => {
-    const { id, name, price, category } = req.body;
-    (0, database_2.createProduct)(id, name, price, category);
-    res.status(201).send("Produto cadastrado com sucesso!");
+    try {
+        const { id, name, price, category } = req.body;
+        let errors = validaProductBody(id);
+        if (errors.length > 0) {
+            console.log(errors);
+            res.status(400).send(errors);
+        }
+        else {
+            (0, database_2.createProduct)(id, name, price, category);
+            res.status(201).send("Produto cadastrado com sucesso!");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.get('/product/search', (req, res) => {
-    const q = req.query.q;
-    const result = (0, database_2.queryProductsByName)(q);
-    res.status(200).send(result);
+    try {
+        const q = req.query.q;
+        if (q.length < 1) {
+            res.status(400).send("query params deve possuir pelo menos um caractere.");
+        }
+        let result = (0, database_2.queryProductsByName)(q);
+        res.status(200).send(result);
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.get("/products/:id", (req, res) => {
     const id = req.params.id;
@@ -45,9 +97,23 @@ app.get("/products/:id", (req, res) => {
     res.status(200).send(result);
 });
 app.post("/purchases", (req, res) => {
-    const { userId, productId, quantity, totalPrice } = req.body;
-    (0, database_1.createPurchase)(userId, productId, quantity, totalPrice);
-    res.status(201).send("Compra realizada com sucesso!");
+    try {
+        const { userId, productId, quantity, totalPrice } = req.body;
+        let errors = validaPurchaseBody(userId, productId, quantity, totalPrice);
+        if (errors.length > 0) {
+            console.log(errors);
+            res.status(400).send(errors);
+        }
+        else {
+            (0, database_1.createPurchase)(userId, productId, quantity, totalPrice);
+            res.status(201).send("Compra realizada com sucesso!");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
 });
 app.get("/users/:id/purchases", (req, res) => {
     const id = req.params.id;
@@ -94,4 +160,40 @@ app.put("/products/:id", (req, res) => {
         res.status(404).send("Produto não encontrado!");
     }
 });
+function validaUserBody(id, email) {
+    let errors = [];
+    let existId = (0, database_1.getUserById)(id);
+    if (existId) {
+        errors.push("não é possível criar mais de uma conta com a mesma id");
+    }
+    let existEmail = (0, database_1.getUserByEmail)(email);
+    if (existEmail) {
+        errors.push("não é possível criar mais de uma conta com o mesmo email");
+    }
+    return errors;
+}
+function validaProductBody(id) {
+    let errors = [];
+    let existId = (0, database_2.getProductById)(id);
+    if (existId) {
+        errors.push("não é possível criar mais de um produto com a mesma id");
+    }
+    return errors;
+}
+function validaPurchaseBody(idUser, idProduct, quantidade, price) {
+    let errors = [];
+    let existIdUser = (0, database_1.getUserById)(idUser);
+    if (!existIdUser) {
+        errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados");
+    }
+    let existIdProduct = (0, database_2.getProductById)(idProduct);
+    if (!existIdProduct) {
+        errors.push("id do produto que foi comprado deve existir no array de produtos cadastrados");
+    }
+    let valorASerCadastrado = price / quantidade;
+    if ((existIdProduct === null || existIdProduct === void 0 ? void 0 : existIdProduct.price) !== valorASerCadastrado) {
+        errors.push("a quantidade e o total da compra devem estar com o cálculo correto");
+    }
+    return errors;
+}
 //# sourceMappingURL=index.js.map

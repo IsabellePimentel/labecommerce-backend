@@ -139,3 +139,13 @@ export const getUserById = (id: string) : TUser | undefined =>{
     
     return user;
 }
+
+export const getUserByEmail = (email: string) : TUser | undefined =>{
+    const user =  users.find((user)=>{
+        if(user.email === email){
+            return user
+        }
+    })
+    
+    return user;
+}

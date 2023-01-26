@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = exports.purchases = exports.products = exports.users = void 0;
+exports.getUserByEmail = exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = exports.purchases = exports.products = exports.users = void 0;
 const types_1 = require("./types");
 exports.users = [{
         id: "01",
@@ -122,4 +122,13 @@ const getUserById = (id) => {
     return user;
 };
 exports.getUserById = getUserById;
+const getUserByEmail = (email) => {
+    const user = exports.users.find((user) => {
+        if (user.email === email) {
+            return user;
+        }
+    });
+    return user;
+};
+exports.getUserByEmail = getUserByEmail;
 //# sourceMappingURL=database.js.map
