@@ -1,12 +1,15 @@
+import { db } from "./database/knex";
 import { TUser, TProduct, TPurchase,Category } from "./types";
 
 export const users: TUser[] = [{
     id: "01",
+    name: "bananinha",
     email: "Bananinha@teste.com",
     password: "54321",
 },
 {
     id: "02",
+    name: "pedro",
     email: "pedro@teste.com",
     password: "123456",  
 }]
@@ -14,13 +17,17 @@ export const users: TUser[] = [{
 export const products:TProduct[]=[{
     id: "01",
     name: "chocolate",
+    description: "teste",
     price: 30.22,
     category: Category.FOOD,
+    image_url: "teste"
 },{
     id: "02",
     name: "Doce de Leite",
+    description: "teste",
     price: 40.23,
     category: Category.FOOD,
+    image_url: "teste"
 }]
 
 export const purchases:TPurchase[]=[{
@@ -36,76 +43,67 @@ export const purchases:TPurchase[]=[{
 }]
 
 
-export const  createUser = (idUser: string, emailUser: string, passwordUser:string) =>{
-    let newUser = {
-        id:idUser,
-        email: emailUser,
-        password: passwordUser
-    }
-
-    users.push(newUser)
+export const  createUser = async (idUser: string, name:string, emailUser: string, passwordUser:string) =>{
+    await db.raw(`
+            INSERT INTO users(id, name, email, password)
+            VALUES("${idUser}", "${name}", "${emailUser}", "${passwordUser}");
+        `)
 }
 
-export const getAllUsers = (): TUser[]=> {
+export const getAllUsers = async (): Promise<TUser[]>=> {
+
+    const users = await db.raw(`SELECT * FROM users;`)
+
     return users
 }
 
-export const createProduct= (id:string, name: string, price: number, category: Category) =>{
-    const newProduct = {
-        id: id,
-        name: name,
-        price: price,
-        category: category
-    }
-
-    products.push(newProduct)
+export const createProduct= async (id:string, name: string, description: string, price: number, category: Category, image_url: string) =>{
+    await db.raw(`
+    INSERT INTO products(id, name, description, price, category, image_url )
+    VALUES("${id}", "${name}", "${description}", "${price}", "${category}", "${image_url}");
+`)
 }
 
-export const getAllProducts = (): TProduct[ ]=> {
+export const getAllProducts = async (): Promise<TProduct[]>=> {
+    const products = await db.raw(`SELECT * FROM products;`)
     return products
 }
 
-export const getProductById = (idToSearch: string) : TProduct | undefined =>{
-    const produto =  products.find((product)=>{
-        if(product.id === idToSearch){
-            return product
-        }
-    })
-    
-    return produto;
+export const getProductById = async (idToSearch: string) : Promise<TProduct> =>{
+
+    const products = await db.raw(`SELECT * FROM products WHERE id = "${idToSearch}";`)
+    return products?.[0]
+
 }
 
 
-export const queryProductsByName = (q:string) : TProduct[] => {
-    const produtos =  products.filter(
-        (product) => {
-          return(product.name.toLowerCase().includes(q.toLowerCase()))
-        }
-    ) 
+export const queryProductsByName = async (q:string) : Promise<TProduct[]> => {
+
+    const produtos = await db.raw(`
+        SELECT * FROM products 
+        WHERE UPPER(name) like UPPER("%${q}%");
+    `)
     
     return produtos
 }
 
-export const createPurchase = (userId: string, productId: string, quantity: number, totalPrice: number) :void => {
-    const newPurchase:TPurchase = {
-        userId,
-        productId,
-        quantity,
-        totalPrice
-    }
-
-    purchases.push(newPurchase)
+export const createPurchase = async (userId: string, buyer_id: string, total_price: number, paid: number) :Promise<void> => {
+   
+    await db.raw(`
+            INSERT INTO purchases (id, buyer_id, total_price, paid)
+            VALUES ("${userId}","${buyer_id}","${total_price}","${paid}")
+        ;`)
+    
 
     console.log("Compra realizada com sucesso")
     console.table(purchases)
 }
 
-export const getAllPurchasesFromUserId = (userIdToSearch:string) :TPurchase[]=> {
-    return purchases.filter(
-        (purchase) => {
-          return(purchase.userId.toLowerCase().includes(userIdToSearch.toLowerCase()))
-        }
-      ) 
+export const getAllPurchasesFromUserId = async (userIdToSearch:string) :Promise<TPurchase[]>=> {
+    
+    const purchases = await db.raw(`SELECT * FROM purchases WHERE buyer_id = "${userIdToSearch}";`)
+    return purchases
+
 }
 
 export const deleteUserById = (id: string) : void => {
@@ -130,22 +128,22 @@ export const deleteProductById = (id: string) : void => {
     
 }
 
-export const getUserById = (id: string) : TUser | undefined =>{
-    const user =  users.find((user)=>{
-        if(user.id === id){
-            return user
-        }
-    })
-    
-    return user;
+export const getUserById = async (id: string) : Promise< TUser > =>{
+
+    const user = await db.raw(`SELECT * FROM users WHERE id = "${id}";`)
+
+    return user?.[0];
 }
 
-export const getUserByEmail = (email: string) : TUser | undefined =>{
-    const user =  users.find((user)=>{
-        if(user.email === email){
-            return user
-        }
-    })
+export const getUserByEmail = async (email: string) : Promise<TUser> =>{
+    const user = await db.raw(`SELECT * FROM users WHERE email = "${email}";`)
     
-    return user;
+    return user?.[0];
+}
+
+export const getPurchaseById = async (id: string) : Promise< TUser > =>{
+
+    const user = await db.raw(`SELECT * FROM purchases WHERE id = "${id}";`)
+
+    return user?.[0];
 }

@@ -1,6 +1,6 @@
 import {
     getAllUsers, createPurchase, getAllPurchasesFromUserId,
-    deleteUserById, deleteProductById, getUserById, getUserByEmail
+    deleteUserById, deleteProductById, getUserById, getUserByEmail, getPurchaseById
 } from "./database";
 import { createUser, createProduct, getAllProducts, queryProductsByName, getProductById } from "./database";
 import { TProduct, TPurchase, TUser } from "./types";
@@ -21,10 +21,10 @@ app.get('/ping', (req: Request, res: Response) => {
 })
 
 
-app.get('/users', (req: Request, res: Response) => {
+app.get('/users', async (req: Request, res: Response) => {
 
     try {
-        let users = getAllUsers()
+        let users = await getAllUsers()
 
         res.status(200).send(users)
     } catch (error) {
@@ -36,18 +36,20 @@ app.get('/users', (req: Request, res: Response) => {
 })
 
 
-app.post('/users', (req: Request, res: Response) => {
+app.post('/users', async (req: Request, res: Response) => {
 
     try {
-        const { id, email, password } = req.body as TUser
+        const { id, name, email, password } = req.body as TUser
 
-        let errors = validaUserBody(id, email)
+        let errors = await validaUserBody(id, email)
+
         if (errors.length > 0) {
             console.log(errors)
             res.status(400).send(errors)
         } else {
             createUser(
                 id,
+                name,
                 email,
                 password
             )
@@ -68,9 +70,9 @@ app.post('/users', (req: Request, res: Response) => {
 
 
 
-app.get('/products', (req: Request, res: Response) => {
+app.get('/products', async (req: Request, res: Response) => {
     try {
-        let products = getAllProducts()
+        let products = await getAllProducts()
 
         res.status(200).send(products)
     } catch (error) {
@@ -83,12 +85,12 @@ app.get('/products', (req: Request, res: Response) => {
 
 
 
-app.post('/products', (req: Request, res: Response) => {
+app.post('/products', async (req: Request, res: Response) => {
 
     try {
-        const { id, name, price, category } = req.body as TProduct
+        const { id, name, description, price, category, image_url } = req.body as TProduct
 
-        let errors = validaProductBody(id)
+        let errors = await validaProductBody(id)
         if (errors.length > 0) {
             console.log(errors)
             res.status(400).send(errors)
@@ -96,8 +98,10 @@ app.post('/products', (req: Request, res: Response) => {
             createProduct(
                 id,
                 name,
+                description,
                 price,
-                category
+                category,
+                image_url
             )
 
             res.status(201).send("Produto cadastrado com sucesso!")
@@ -114,7 +118,7 @@ app.post('/products', (req: Request, res: Response) => {
 
 
 
-app.get('/product/search', (req: Request, res: Response) => {
+app.get('/product/search', async (req: Request, res: Response) => {
 
     try {
         const q = req.query.q as string
@@ -123,7 +127,7 @@ app.get('/product/search', (req: Request, res: Response) => {
             res.status(400).send("query params deve possuir pelo menos um caractere.")
         }
 
-        let result = queryProductsByName(q)
+        let result = await queryProductsByName(q)
 
         res.status(200).send(result)
     } catch (error) {
@@ -134,12 +138,12 @@ app.get('/product/search', (req: Request, res: Response) => {
 
 })
 
-app.get("/products/:id", (req: Request, res: Response) => {
+app.get("/products/:id", async (req: Request, res: Response) => {
     try {
 
         const id = req.params.id
 
-        const result = getProductById(id)
+        const result = await getProductById(id)
         if (result) {
             res.status(200).send(result)
         } else {
@@ -154,21 +158,18 @@ app.get("/products/:id", (req: Request, res: Response) => {
     }
 })
 
-app.post("/purchases", (req: Request, res: Response) => {
+app.post("/purchases", async (req: Request, res: Response) => {
     try {
-        const { userId, productId, quantity, totalPrice } = req.body as TPurchase
+        const { id, buyer_id, total_price, paid } = req.body = req.body 
 
 
-        let errors = validaPurchaseBody(userId, productId, quantity, totalPrice)
+        let errors = await validaPurchaseBody(id, buyer_id)
         if (errors.length > 0) {
             console.log(errors)
             res.status(400).send(errors)
         } else {
             createPurchase(
-                userId,
-                productId,
-                quantity,
-                totalPrice
+                id, buyer_id, total_price, paid
             )
 
             res.status(201).send("Compra realizada com sucesso!")
@@ -182,16 +183,16 @@ app.post("/purchases", (req: Request, res: Response) => {
 
 })
 
-app.get("/users/:id/purchases", (req: Request, res: Response) => {
+app.get("/users/:id/purchases", async (req: Request, res: Response) => {
     try {
         const id = req.params.id
 
-        let errors = userExists(id)
-        if (errors.length > 0) {
+        let errors = await userExists(id)
+        if (errors?.length > 0) {
             console.log(errors)
             res.status(400).send(errors)
         } else {
-            const result = getAllPurchasesFromUserId(id)
+            const result = await getAllPurchasesFromUserId(id)
             res.status(200).send(result)
         }
 
@@ -202,10 +203,10 @@ app.get("/users/:id/purchases", (req: Request, res: Response) => {
     }
 })
 
-app.delete("/users/:id", (req: Request, res: Response) => {
+app.delete("/users/:id", async (req: Request, res: Response) => {
     const id = req.params.id
 
-    let errors = userExists(id)
+    let errors = await userExists(id)
     if (errors.length > 0) {
         console.log(errors)
         res.status(400).send(errors)
@@ -230,18 +231,18 @@ app.delete("/products/:id", (req: Request, res: Response) => {
 
 })
 
-app.put("/users/:id", (req: Request, res: Response) => {
+app.put("/users/:id", async (req: Request, res: Response) => {
     try {
         const id = req.params.id
         const newEmail = req.body.email as string | undefined
         const newPassword = req.body.password as string | undefined
 
-        const userToEdit = getUserById(id)
+        const userToEdit = await getUserById(id)
 
         if (userToEdit) {
 
             if (typeof newEmail !== 'undefined' && newEmail !== userToEdit.email) {
-                let userExists = getUserByEmail(newEmail)
+                let userExists = await getUserByEmail(newEmail)
                 if(userExists){
                     throw new Error('Não é possível alterar pois já existe um usuário com o mesmo email.')
                 }
@@ -262,13 +263,13 @@ app.put("/users/:id", (req: Request, res: Response) => {
     }
 })
 
-app.put("/products/:id", (req: Request, res: Response) => {
+app.put("/products/:id", async (req: Request, res: Response) => {
     const id = req.params.id
     const newName = req.body.name as string | undefined
     const newPrice = req.body.price as number | undefined
     const newCategory = req.body.category as Category | undefined
 
-    const product = getProductById(id)
+    const product = await getProductById(id)
 
     if (product) {
         product.name = newName || product.name
@@ -280,37 +281,37 @@ app.put("/products/:id", (req: Request, res: Response) => {
     }
 })
 
-function validaUserBody(id: string, email: string): string[] {
+async function validaUserBody(id: string, email: string): Promise<string[]> {
 
     let errors: string[] = []
 
-    let existId = getUserById(id)
-    if (existId) {
+    let existId = await getUserById(id)
+    if (existId?.id === id) {
         errors.push("não é possível criar mais de uma conta com a mesma id")
     }
 
-    let existEmail = getUserByEmail(email)
-    if (existEmail) {
+    let existEmail = await getUserByEmail(email)
+    if (existEmail?.email === email) {
         errors.push("não é possível criar mais de uma conta com o mesmo email")
     }
 
     return errors;
 }
 
-function validaProductBody(id: string): string[] {
+async function validaProductBody(id: string): Promise<string[]> {
 
     let errors: string[] = []
-    let existId = getProductById(id)
-    if (existId) {
+    let existId = await getProductById(id)
+    if (existId?.id === id) {
         errors.push("não é possível criar mais de um produto com a mesma id")
     }
 
     return errors
 }
 
-function userExists(id: string): string[] {
+async function userExists(id: string): Promise<string[]> {
     let errors: string[] = []
-    let existId = getUserById(id)
+    let existId = await getUserById(id)
     if (!existId) {
         errors.push("usuário de id fornecido não existe")
     }
@@ -328,26 +329,26 @@ function productExists(id: string): string[] {
     return errors
 }
 
-function validaPurchaseBody(idUser: string, idProduct: string, quantidade: number, price: number): string[] {
+async function validaPurchaseBody(id: string, idUser: string): Promise<string[]> {
 
     let errors: string[] = []
 
-    let existIdUser = getUserById(idUser)
+    let existIdUser = await getUserById(idUser)
     if (!existIdUser) {
         errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados")
     }
 
-    let existIdProduct = getProductById(idProduct)
-    if (!existIdProduct) {
-        errors.push("id do produto que foi comprado deve existir no array de produtos cadastrados")
+    let existIdProduct = await getPurchaseById(id)
+    if (existIdProduct?.id === id) {
+        errors.push("id do purchase já existe")
     }
 
     // calculo valor produto
 
-    let valorASerCadastrado = price / quantidade
-    if (existIdProduct?.price !== valorASerCadastrado) {
-        errors.push("a quantidade e o total da compra devem estar com o cálculo correto")
-    }
+    //let valorASerCadastrado = price / quantidade
+   //if (existIdProduct?.price !== valorASerCadastrado) {
+    //    errors.push("a quantidade e o total da compra devem estar com o cálculo correto")
+    //}
     return errors
 }
 
