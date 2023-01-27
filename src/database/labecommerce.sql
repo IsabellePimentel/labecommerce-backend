@@ -1,3 +1,4 @@
+-- Active: 1673873949173@@127.0.0.1@3306
 
 CREATE Table
     users(
@@ -73,3 +74,48 @@ SELECT * FROM products
 WHERE price BETWEEN 20 AND 30
 ORDER BY price ASC;
 
+CREATE TABLE purchases (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL, 
+    total_price REAL NOT NULL,
+    paid INTEGER NOT NULL, 
+    delivered_at TEXT, 
+    buyer_id TEXT NOT NULL, 
+    FOREIGN KEY (buyer_id) REFERENCES users(id)
+);
+
+
+INSERT INTO purchases (id, total_price, paid, delivered_at, buyer_id)
+VALUES 
+    ('01', 60, 0, NULL, '01'), 
+    ('02', 80, 1, NULL, '01'), 
+    ('03', 50, 0, NULL, '02'), 
+    ('04', 70, 0, NULL, '02'), 
+    ('05', 200, 0, NULL, '03'), 
+    ('06', 80, 0, NULL, '03');
+
+UPDATE purchases
+SET delivered_at = DATETIME('now'),
+    paid = 1
+WHERE id = '02';
+
+SELECT * FROM purchases
+INNER JOIN users ON purchases.buyer_id = users.id
+WHERE users.id = "02";
+
+CREATE TABLE purchases_products (
+    purchase_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+INSERT INTO purchases_products (purchase_id, product_id, quantity)
+VALUES 
+    ("01", "01", 2), 
+    ("02", "03", 1), 
+    ("03", "04", 1);
+
+SELECT * FROM purchases_products pp 
+INNER JOIN purchases pu ON pp.purchase_id = pu.id
+INNER JOIN products pr ON pp.product_id = pr.id;
