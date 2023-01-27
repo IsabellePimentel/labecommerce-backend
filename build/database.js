@@ -9,47 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPurchaseById = exports.getUserByEmail = exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = exports.purchases = exports.products = exports.users = void 0;
+exports.getPurchaseProductListById = exports.getPurchaseById = exports.getPurchaseExist = exports.getUserByEmail = exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = void 0;
 const knex_1 = require("./database/knex");
-const types_1 = require("./types");
-exports.users = [{
-        id: "01",
-        name: "bananinha",
-        email: "Bananinha@teste.com",
-        password: "54321",
-    },
-    {
-        id: "02",
-        name: "pedro",
-        email: "pedro@teste.com",
-        password: "123456",
-    }];
-exports.products = [{
-        id: "01",
-        name: "chocolate",
-        description: "teste",
-        price: 30.22,
-        category: types_1.Category.FOOD,
-        image_url: "teste"
-    }, {
-        id: "02",
-        name: "Doce de Leite",
-        description: "teste",
-        price: 40.23,
-        category: types_1.Category.FOOD,
-        image_url: "teste"
-    }];
-exports.purchases = [{
-        userId: "01",
-        productId: "01",
-        quantity: 2,
-        totalPrice: 60.44,
-    }, {
-        userId: "02",
-        productId: "01",
-        quantity: 1,
-        totalPrice: 30.22,
-    }];
 const createUser = (idUser, name, emailUser, passwordUser) => __awaiter(void 0, void 0, void 0, function* () {
     yield knex_1.db.raw(`
             INSERT INTO users(id, name, email, password)
@@ -87,13 +48,16 @@ const queryProductsByName = (q) => __awaiter(void 0, void 0, void 0, function* (
     return produtos;
 });
 exports.queryProductsByName = queryProductsByName;
-const createPurchase = (userId, buyer_id, total_price, paid) => __awaiter(void 0, void 0, void 0, function* () {
+const createPurchase = (id, buyer_id, total_price, paid, product_id, quantity) => __awaiter(void 0, void 0, void 0, function* () {
     yield knex_1.db.raw(`
             INSERT INTO purchases (id, buyer_id, total_price, paid)
-            VALUES ("${userId}","${buyer_id}","${total_price}","${paid}")
+            VALUES ("${id}","${buyer_id}","${total_price}","${paid}")
+        ;`);
+    yield knex_1.db.raw(`
+            INSERT INTO purchases_products (purchase_id, product_id, quantity)
+            VALUES ("${id}","${product_id}","${quantity}")
         ;`);
     console.log("Compra realizada com sucesso");
-    console.table(exports.purchases);
 });
 exports.createPurchase = createPurchase;
 const getAllPurchasesFromUserId = (userIdToSearch) => __awaiter(void 0, void 0, void 0, function* () {
@@ -101,23 +65,13 @@ const getAllPurchasesFromUserId = (userIdToSearch) => __awaiter(void 0, void 0, 
     return purchases;
 });
 exports.getAllPurchasesFromUserId = getAllPurchasesFromUserId;
-const deleteUserById = (id) => {
-    const userIndex = exports.users.findIndex((user) => {
-        return user.id === id;
-    });
-    if (userIndex >= 0) {
-        exports.users.splice(userIndex, 1);
-    }
-};
+const deleteUserById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`DELETE FROM users WHERE id = "${id}";`);
+});
 exports.deleteUserById = deleteUserById;
-const deleteProductById = (id) => {
-    const productIndex = exports.products.findIndex((product) => {
-        return product.id === id;
-    });
-    if (productIndex >= 0) {
-        exports.products.splice(productIndex, 1);
-    }
-};
+const deleteProductById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`DELETE FROM products WHERE id = "${id}";`);
+});
 exports.deleteProductById = deleteProductById;
 const getUserById = (id) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield knex_1.db.raw(`SELECT * FROM users WHERE id = "${id}";`);
@@ -129,9 +83,29 @@ const getUserByEmail = (email) => __awaiter(void 0, void 0, void 0, function* ()
     return user === null || user === void 0 ? void 0 : user[0];
 });
 exports.getUserByEmail = getUserByEmail;
+const getPurchaseExist = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`SELECT p.id FROM purchases p WHERE p.id = "${id}";`);
+    return user === null || user === void 0 ? void 0 : user[0];
+});
+exports.getPurchaseExist = getPurchaseExist;
 const getPurchaseById = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = yield knex_1.db.raw(`SELECT * FROM purchases WHERE id = "${id}";`);
+    const user = yield knex_1.db.raw(`SELECT p.id as purchaseId, 
+    p.buyer_id as buyerId, 
+    p.total_price as totalPrice, 
+    p.paid as idPaid, 
+    p.created_at as createdAt, 
+    u.name as name, 
+    u.email as email FROM purchases p 
+    INNER JOIN users u ON p.buyer_id = u.id 
+    WHERE p.id = "${id}";`);
     return user === null || user === void 0 ? void 0 : user[0];
 });
 exports.getPurchaseById = getPurchaseById;
+const getPurchaseProductListById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const list = yield knex_1.db.raw(`SELECT id, name, price, description, image_url as imageUrl, quantity from  products  pr
+    INNER JOIN purchases_products pp on pp.product_id = pr.id
+    WHERE pp.purchase_id = "${id}";`);
+    return list;
+});
+exports.getPurchaseProductListById = getPurchaseProductListById;
 //# sourceMappingURL=database.js.map

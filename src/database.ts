@@ -1,47 +1,5 @@
 import { db } from "./database/knex";
-import { TUser, TProduct, TPurchase,Category } from "./types";
-
-export const users: TUser[] = [{
-    id: "01",
-    name: "bananinha",
-    email: "Bananinha@teste.com",
-    password: "54321",
-},
-{
-    id: "02",
-    name: "pedro",
-    email: "pedro@teste.com",
-    password: "123456",  
-}]
-
-export const products:TProduct[]=[{
-    id: "01",
-    name: "chocolate",
-    description: "teste",
-    price: 30.22,
-    category: Category.FOOD,
-    image_url: "teste"
-},{
-    id: "02",
-    name: "Doce de Leite",
-    description: "teste",
-    price: 40.23,
-    category: Category.FOOD,
-    image_url: "teste"
-}]
-
-export const purchases:TPurchase[]=[{
-    userId: "01",
-    productId: "01",
-    quantity: 2,
-    totalPrice: 60.44,
-},{
-    userId: "02",
-    productId: "01",
-    quantity: 1,
-    totalPrice: 30.22,
-}]
-
+import { TUser, TProduct, TPurchase,Category, TPurchaseQuery } from "./types";
 
 export const  createUser = async (idUser: string, name:string, emailUser: string, passwordUser:string) =>{
     await db.raw(`
@@ -87,16 +45,20 @@ export const queryProductsByName = async (q:string) : Promise<TProduct[]> => {
     return produtos
 }
 
-export const createPurchase = async (userId: string, buyer_id: string, total_price: number, paid: number) :Promise<void> => {
+export const createPurchase = async (id: string, buyer_id: string, total_price: number, paid: number, product_id: string, quantity: number) :Promise<void> => {
    
     await db.raw(`
             INSERT INTO purchases (id, buyer_id, total_price, paid)
-            VALUES ("${userId}","${buyer_id}","${total_price}","${paid}")
+            VALUES ("${id}","${buyer_id}","${total_price}","${paid}")
         ;`)
     
+        await db.raw(`
+            INSERT INTO purchases_products (purchase_id, product_id, quantity)
+            VALUES ("${id}","${product_id}","${quantity}")
+        ;`)
+
 
     console.log("Compra realizada com sucesso")
-    console.table(purchases)
 }
 
 export const getAllPurchasesFromUserId = async (userIdToSearch:string) :Promise<TPurchase[]>=> {
@@ -106,25 +68,14 @@ export const getAllPurchasesFromUserId = async (userIdToSearch:string) :Promise<
 
 }
 
-export const deleteUserById = (id: string) : void => {
-    const userIndex = users.findIndex((user) => {
-        return user.id === id
-    })
-    
-    if (userIndex >= 0) {
-        users.splice(userIndex, 1)
-    }
+export const deleteUserById = async (id: string) : Promise<void> => {
 
+    const user = await db.raw(`DELETE FROM users WHERE id = "${id}";`)
+   
 }
 
-export const deleteProductById = (id: string) : void => {
-    const productIndex = products.findIndex((product) => {
-        return product.id === id
-    })
-    
-    if (productIndex >= 0) {
-        products.splice(productIndex, 1)    
-    }
+export const deleteProductById = async (id: string) : Promise<void> => {
+    const user = await db.raw(`DELETE FROM products WHERE id = "${id}";`)
     
 }
 
@@ -141,9 +92,33 @@ export const getUserByEmail = async (email: string) : Promise<TUser> =>{
     return user?.[0];
 }
 
-export const getPurchaseById = async (id: string) : Promise< TUser > =>{
-
-    const user = await db.raw(`SELECT * FROM purchases WHERE id = "${id}";`)
+export const getPurchaseExist = async (id: string) : Promise< TPurchase > =>{
+    const user = await db.raw(`SELECT p.id FROM purchases p WHERE p.id = "${id}";`)
 
     return user?.[0];
+}
+
+export const getPurchaseById = async (id: string) : Promise< TPurchaseQuery > =>{
+
+    const user = await db.raw(`SELECT p.id as purchaseId, 
+    p.buyer_id as buyerId, 
+    p.total_price as totalPrice, 
+    p.paid as idPaid, 
+    p.created_at as createdAt, 
+    u.name as name, 
+    u.email as email FROM purchases p 
+    INNER JOIN users u ON p.buyer_id = u.id 
+    WHERE p.id = "${id}";`)
+
+    return user?.[0];
+}
+
+
+export const getPurchaseProductListById = async (id: string) : Promise< TProduct[] > =>{
+
+    const list = await db.raw(`SELECT id, name, price, description, image_url as imageUrl, quantity from  products  pr
+    INNER JOIN purchases_products pp on pp.product_id = pr.id
+    WHERE pp.purchase_id = "${id}";`)
+
+    return list;
 }

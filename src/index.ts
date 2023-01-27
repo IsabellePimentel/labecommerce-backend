@@ -1,6 +1,6 @@
 import {
     getAllUsers, createPurchase, getAllPurchasesFromUserId,
-    deleteUserById, deleteProductById, getUserById, getUserByEmail, getPurchaseById
+    deleteUserById, deleteProductById, getUserById, getUserByEmail, getPurchaseById, getPurchaseExist, getPurchaseProductListById
 } from "./database";
 import { createUser, createProduct, getAllProducts, queryProductsByName, getProductById } from "./database";
 import { TProduct, TPurchase, TUser } from "./types";
@@ -160,16 +160,16 @@ app.get("/products/:id", async (req: Request, res: Response) => {
 
 app.post("/purchases", async (req: Request, res: Response) => {
     try {
-        const { id, buyer_id, total_price, paid } = req.body = req.body 
+        const { id, buyer_id, product_id, total_price, paid, quantidade } = req.body = req.body 
 
 
-        let errors = await validaPurchaseBody(id, buyer_id)
-        if (errors.length > 0) {
+        let errors = await validaPurchaseBody(id, buyer_id, product_id, total_price, quantidade)
+        if (errors?.length > 0) {
             console.log(errors)
             res.status(400).send(errors)
         } else {
             createPurchase(
-                id, buyer_id, total_price, paid
+                id, buyer_id, total_price, paid, product_id, quantidade
             )
 
             res.status(201).send("Compra realizada com sucesso!")
@@ -211,13 +211,13 @@ app.delete("/users/:id", async (req: Request, res: Response) => {
         console.log(errors)
         res.status(400).send(errors)
     } else {
-        deleteUserById(id)
+        await deleteUserById(id)
         res.status(200).send("User apagado com sucesso!")
     }
 
 })
 
-app.delete("/products/:id", (req: Request, res: Response) => {
+app.delete("/products/:id", async (req: Request, res: Response) => {
     const id = req.params.id
 
     let errors = productExists(id)
@@ -225,7 +225,7 @@ app.delete("/products/:id", (req: Request, res: Response) => {
         console.log(errors)
         res.status(400).send(errors)
     } else {
-        deleteProductById(id)
+        await deleteProductById(id)
         res.status(200).send("Produto apagado com sucesso!")
     }
 
@@ -329,7 +329,7 @@ function productExists(id: string): string[] {
     return errors
 }
 
-async function validaPurchaseBody(id: string, idUser: string): Promise<string[]> {
+async function validaPurchaseBody(id: string, idUser: string, idProduct: string, total_price: number, quantidade: number): Promise<string[]> {
 
     let errors: string[] = []
 
@@ -338,18 +338,46 @@ async function validaPurchaseBody(id: string, idUser: string): Promise<string[]>
         errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados")
     }
 
-    let existIdProduct = await getPurchaseById(id)
-    if (existIdProduct?.id === id) {
+    let existIdProduct = await getProductById(idProduct)
+    if (!existIdProduct) {
+        errors.push("Produto não existe")
+    }
+
+    let existIdPurchase = await getPurchaseExist(id)
+    if (existIdPurchase?.id === id) {
         errors.push("id do purchase já existe")
     }
 
     // calculo valor produto
 
-    //let valorASerCadastrado = price / quantidade
-   //if (existIdProduct?.price !== valorASerCadastrado) {
-    //    errors.push("a quantidade e o total da compra devem estar com o cálculo correto")
-    //}
+    let valorASerCadastrado = total_price / quantidade
+   if (existIdProduct?.price !== valorASerCadastrado) {
+        errors.push("a quantidade e o total da compra devem estar com o cálculo correto")
+    }
     return errors
 }
 
 
+app.get("/purchases/:id", async (req: Request, res: Response) => {
+    try {
+
+        const id = req.params.id
+
+        const result = await getPurchaseById(id)
+        if (result) {
+
+            result.productsList = await getPurchaseProductListById(id)
+
+
+            res.status(200).send(result)
+        } else {
+            res.status(400).send("produto não existe")
+        }
+
+
+    } catch (error) {
+        let erro = error as Error
+        console.log(error)
+        res.status(500).send(erro.message)
+    }
+})

@@ -119,14 +119,14 @@ app.get("/products/:id", (req, res) => __awaiter(void 0, void 0, void 0, functio
 }));
 app.post("/purchases", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id, buyer_id, total_price, paid } = req.body = req.body;
-        let errors = yield validaPurchaseBody(id, buyer_id);
-        if (errors.length > 0) {
+        const { id, buyer_id, product_id, total_price, paid, quantidade } = req.body = req.body;
+        let errors = yield validaPurchaseBody(id, buyer_id, product_id, total_price, quantidade);
+        if ((errors === null || errors === void 0 ? void 0 : errors.length) > 0) {
             console.log(errors);
             res.status(400).send(errors);
         }
         else {
-            (0, database_1.createPurchase)(id, buyer_id, total_price, paid);
+            (0, database_1.createPurchase)(id, buyer_id, total_price, paid, product_id, quantidade);
             res.status(201).send("Compra realizada com sucesso!");
         }
     }
@@ -163,11 +163,11 @@ app.delete("/users/:id", (req, res) => __awaiter(void 0, void 0, void 0, functio
         res.status(400).send(errors);
     }
     else {
-        (0, database_1.deleteUserById)(id);
+        yield (0, database_1.deleteUserById)(id);
         res.status(200).send("User apagado com sucesso!");
     }
 }));
-app.delete("/products/:id", (req, res) => {
+app.delete("/products/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = req.params.id;
     let errors = productExists(id);
     if (errors.length > 0) {
@@ -175,10 +175,10 @@ app.delete("/products/:id", (req, res) => {
         res.status(400).send(errors);
     }
     else {
-        (0, database_1.deleteProductById)(id);
+        yield (0, database_1.deleteProductById)(id);
         res.status(200).send("Produto apagado com sucesso!");
     }
-});
+}));
 app.put("/users/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const id = req.params.id;
@@ -264,18 +264,44 @@ function productExists(id) {
     }
     return errors;
 }
-function validaPurchaseBody(id, idUser) {
+function validaPurchaseBody(id, idUser, idProduct, total_price, quantidade) {
     return __awaiter(this, void 0, void 0, function* () {
         let errors = [];
         let existIdUser = yield (0, database_1.getUserById)(idUser);
         if (!existIdUser) {
             errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados");
         }
-        let existIdProduct = yield (0, database_1.getPurchaseById)(id);
-        if ((existIdProduct === null || existIdProduct === void 0 ? void 0 : existIdProduct.id) === id) {
+        let existIdProduct = yield (0, database_2.getProductById)(idProduct);
+        if (!existIdProduct) {
+            errors.push("Produto não existe");
+        }
+        let existIdPurchase = yield (0, database_1.getPurchaseExist)(id);
+        if ((existIdPurchase === null || existIdPurchase === void 0 ? void 0 : existIdPurchase.id) === id) {
             errors.push("id do purchase já existe");
+        }
+        let valorASerCadastrado = total_price / quantidade;
+        if ((existIdProduct === null || existIdProduct === void 0 ? void 0 : existIdProduct.price) !== valorASerCadastrado) {
+            errors.push("a quantidade e o total da compra devem estar com o cálculo correto");
         }
         return errors;
     });
 }
+app.get("/purchases/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        const result = yield (0, database_1.getPurchaseById)(id);
+        if (result) {
+            result.productsList = yield (0, database_1.getPurchaseProductListById)(id);
+            res.status(200).send(result);
+        }
+        else {
+            res.status(400).send("produto não existe");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
+}));
 //# sourceMappingURL=index.js.map

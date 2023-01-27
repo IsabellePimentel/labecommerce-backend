@@ -103,8 +103,8 @@ INNER JOIN users ON purchases.buyer_id = users.id
 WHERE users.id = "02";
 
 CREATE TABLE purchases_products (
-    purchase_id TEXT NOT NULL,
     product_id TEXT NOT NULL,
+    purchase_id TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     FOREIGN KEY (purchase_id) REFERENCES purchases(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
