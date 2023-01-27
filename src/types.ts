@@ -18,10 +18,22 @@ export type TPurchase = {
     productId: string;
     quantity: number;
     totalPrice: number;
+    id: string;
 }
 
 export enum Category {
     FOOD = "Comida",
     SHOES= "Roupa",
     ACESSORIES = "Acessorio"
+}
+
+export type TPurchaseQuery = {
+    purchaseId: string;
+    totalPrice: number;
+    createdAt: string;
+    isPaid: number;
+    buyerId: string;
+    email: string;
+    name: string;
+    productsList: TProduct[]
 }
