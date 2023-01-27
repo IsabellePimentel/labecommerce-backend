@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,9 +25,9 @@ app.listen(3003, () => {
 app.get('/ping', (req, res) => {
     res.send('Pong!');
 });
-app.get('/users', (req, res) => {
+app.get('/users', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let users = (0, database_1.getAllUsers)();
+        let users = yield (0, database_1.getAllUsers)();
         res.status(200).send(users);
     }
     catch (error) {
@@ -26,17 +35,17 @@ app.get('/users', (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.post('/users', (req, res) => {
+}));
+app.post('/users', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id, email, password } = req.body;
-        let errors = validaUserBody(id, email);
+        const { id, name, email, password } = req.body;
+        let errors = yield validaUserBody(id, email);
         if (errors.length > 0) {
             console.log(errors);
             res.status(400).send(errors);
         }
         else {
-            (0, database_2.createUser)(id, email, password);
+            (0, database_2.createUser)(id, name, email, password);
             res.status(201).send("Cliente cadastrado com sucesso!");
         }
     }
@@ -45,10 +54,10 @@ app.post('/users', (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.get('/products', (req, res) => {
+}));
+app.get('/products', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let products = (0, database_2.getAllProducts)();
+        let products = yield (0, database_2.getAllProducts)();
         res.status(200).send(products);
     }
     catch (error) {
@@ -56,17 +65,17 @@ app.get('/products', (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.post('/products', (req, res) => {
+}));
+app.post('/products', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id, name, price, category } = req.body;
-        let errors = validaProductBody(id);
+        const { id, name, description, price, category, image_url } = req.body;
+        let errors = yield validaProductBody(id);
         if (errors.length > 0) {
             console.log(errors);
             res.status(400).send(errors);
         }
         else {
-            (0, database_2.createProduct)(id, name, price, category);
+            (0, database_2.createProduct)(id, name, description, price, category, image_url);
             res.status(201).send("Produto cadastrado com sucesso!");
         }
     }
@@ -75,14 +84,14 @@ app.post('/products', (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.get('/product/search', (req, res) => {
+}));
+app.get('/product/search', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const q = req.query.q;
         if (q.length < 1) {
             res.status(400).send("query params deve possuir pelo menos um caractere.");
         }
-        let result = (0, database_2.queryProductsByName)(q);
+        let result = yield (0, database_2.queryProductsByName)(q);
         res.status(200).send(result);
     }
     catch (error) {
@@ -90,22 +99,34 @@ app.get('/product/search', (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.get("/products/:id", (req, res) => {
-    const id = req.params.id;
-    const result = (0, database_2.getProductById)(id);
-    res.status(200).send(result);
-});
-app.post("/purchases", (req, res) => {
+}));
+app.get("/products/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { userId, productId, quantity, totalPrice } = req.body;
-        let errors = validaPurchaseBody(userId, productId, quantity, totalPrice);
+        const id = req.params.id;
+        const result = yield (0, database_2.getProductById)(id);
+        if (result) {
+            res.status(200).send(result);
+        }
+        else {
+            res.status(400).send("produto não existe");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
+}));
+app.post("/purchases", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id, buyer_id, total_price, paid } = req.body = req.body;
+        let errors = yield validaPurchaseBody(id, buyer_id);
         if (errors.length > 0) {
             console.log(errors);
             res.status(400).send(errors);
         }
         else {
-            (0, database_1.createPurchase)(userId, productId, quantity, totalPrice);
+            (0, database_1.createPurchase)(id, buyer_id, total_price, paid);
             res.status(201).send("Compra realizada com sucesso!");
         }
     }
@@ -114,42 +135,83 @@ app.post("/purchases", (req, res) => {
         console.log(error);
         res.status(500).send(erro.message);
     }
-});
-app.get("/users/:id/purchases", (req, res) => {
+}));
+app.get("/users/:id/purchases", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        let errors = yield userExists(id);
+        if ((errors === null || errors === void 0 ? void 0 : errors.length) > 0) {
+            console.log(errors);
+            res.status(400).send(errors);
+        }
+        else {
+            const result = yield (0, database_1.getAllPurchasesFromUserId)(id);
+            res.status(200).send(result);
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
+}));
+app.delete("/users/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = req.params.id;
-    const result = (0, database_1.getAllPurchasesFromUserId)(id);
-    res.status(200).send(result);
-});
-app.delete("/users/:id", (req, res) => {
-    const id = req.params.id;
-    (0, database_1.deleteUserById)(id);
-    res.status(200).send("User apagado com sucesso!");
-});
-app.delete("/products/:id", (req, res) => {
-    const id = req.params.id;
-    (0, database_1.deleteProductById)(id);
-    res.status(200).send("Produto apagado com sucesso!");
-});
-app.put("/users/:id", (req, res) => {
-    const id = req.params.id;
-    const newEmail = req.body.email;
-    const newPassword = req.body.password;
-    const userToEdit = (0, database_1.getUserById)(id);
-    if (userToEdit) {
-        userToEdit.email = newEmail || userToEdit.email;
-        userToEdit.password = newPassword || userToEdit.password;
-        res.status(200).send("Cadastro atualizado com sucesso!");
+    let errors = yield userExists(id);
+    if (errors.length > 0) {
+        console.log(errors);
+        res.status(400).send(errors);
     }
     else {
-        res.status(404).send("Usuário não encontrado!");
+        (0, database_1.deleteUserById)(id);
+        res.status(200).send("User apagado com sucesso!");
+    }
+}));
+app.delete("/products/:id", (req, res) => {
+    const id = req.params.id;
+    let errors = productExists(id);
+    if (errors.length > 0) {
+        console.log(errors);
+        res.status(400).send(errors);
+    }
+    else {
+        (0, database_1.deleteProductById)(id);
+        res.status(200).send("Produto apagado com sucesso!");
     }
 });
-app.put("/products/:id", (req, res) => {
+app.put("/users/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const id = req.params.id;
+        const newEmail = req.body.email;
+        const newPassword = req.body.password;
+        const userToEdit = yield (0, database_1.getUserById)(id);
+        if (userToEdit) {
+            if (typeof newEmail !== 'undefined' && newEmail !== userToEdit.email) {
+                let userExists = yield (0, database_1.getUserByEmail)(newEmail);
+                if (userExists) {
+                    throw new Error('Não é possível alterar pois já existe um usuário com o mesmo email.');
+                }
+            }
+            userToEdit.email = newEmail || userToEdit.email;
+            userToEdit.password = newPassword || userToEdit.password;
+            res.status(200).send("Cadastro atualizado com sucesso!");
+        }
+        else {
+            res.status(400).send("Usuário não encontrado!");
+        }
+    }
+    catch (error) {
+        let erro = error;
+        console.log(error);
+        res.status(500).send(erro.message);
+    }
+}));
+app.put("/products/:id", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = req.params.id;
     const newName = req.body.name;
     const newPrice = req.body.price;
     const newCategory = req.body.category;
-    const product = (0, database_2.getProductById)(id);
+    const product = yield (0, database_2.getProductById)(id);
     if (product) {
         product.name = newName || product.name;
         product.price = newPrice || product.price;
@@ -157,43 +219,63 @@ app.put("/products/:id", (req, res) => {
         res.status(200).send("Produto atualizado com sucesso!");
     }
     else {
-        res.status(404).send("Produto não encontrado!");
+        res.status(400).send("Produto não encontrado!");
     }
-});
+}));
 function validaUserBody(id, email) {
-    let errors = [];
-    let existId = (0, database_1.getUserById)(id);
-    if (existId) {
-        errors.push("não é possível criar mais de uma conta com a mesma id");
-    }
-    let existEmail = (0, database_1.getUserByEmail)(email);
-    if (existEmail) {
-        errors.push("não é possível criar mais de uma conta com o mesmo email");
-    }
-    return errors;
+    return __awaiter(this, void 0, void 0, function* () {
+        let errors = [];
+        let existId = yield (0, database_1.getUserById)(id);
+        if ((existId === null || existId === void 0 ? void 0 : existId.id) === id) {
+            errors.push("não é possível criar mais de uma conta com a mesma id");
+        }
+        let existEmail = yield (0, database_1.getUserByEmail)(email);
+        if ((existEmail === null || existEmail === void 0 ? void 0 : existEmail.email) === email) {
+            errors.push("não é possível criar mais de uma conta com o mesmo email");
+        }
+        return errors;
+    });
 }
 function validaProductBody(id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let errors = [];
+        let existId = yield (0, database_2.getProductById)(id);
+        if ((existId === null || existId === void 0 ? void 0 : existId.id) === id) {
+            errors.push("não é possível criar mais de um produto com a mesma id");
+        }
+        return errors;
+    });
+}
+function userExists(id) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let errors = [];
+        let existId = yield (0, database_1.getUserById)(id);
+        if (!existId) {
+            errors.push("usuário de id fornecido não existe");
+        }
+        return errors;
+    });
+}
+function productExists(id) {
     let errors = [];
     let existId = (0, database_2.getProductById)(id);
-    if (existId) {
-        errors.push("não é possível criar mais de um produto com a mesma id");
+    if (!existId) {
+        errors.push("Produto de id fornecido não existe");
     }
     return errors;
 }
-function validaPurchaseBody(idUser, idProduct, quantidade, price) {
-    let errors = [];
-    let existIdUser = (0, database_1.getUserById)(idUser);
-    if (!existIdUser) {
-        errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados");
-    }
-    let existIdProduct = (0, database_2.getProductById)(idProduct);
-    if (!existIdProduct) {
-        errors.push("id do produto que foi comprado deve existir no array de produtos cadastrados");
-    }
-    let valorASerCadastrado = price / quantidade;
-    if ((existIdProduct === null || existIdProduct === void 0 ? void 0 : existIdProduct.price) !== valorASerCadastrado) {
-        errors.push("a quantidade e o total da compra devem estar com o cálculo correto");
-    }
-    return errors;
+function validaPurchaseBody(id, idUser) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let errors = [];
+        let existIdUser = yield (0, database_1.getUserById)(idUser);
+        if (!existIdUser) {
+            errors.push("id do usuário que fez a compra deve existir no array de usuários cadastrados");
+        }
+        let existIdProduct = yield (0, database_1.getPurchaseById)(id);
+        if ((existIdProduct === null || existIdProduct === void 0 ? void 0 : existIdProduct.id) === id) {
+            errors.push("id do purchase já existe");
+        }
+        return errors;
+    });
 }
 //# sourceMappingURL=index.js.map

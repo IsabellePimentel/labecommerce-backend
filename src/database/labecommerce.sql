@@ -1,34 +1,36 @@
 -- Active: 1673873949173@@127.0.0.1@3306
 
-CREATE Table
-    users(
-        id TEXT PRIMARY KEY UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL
-    );
+CREATE TABLE users (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    created_at TEXT DEFAULT (DATETIME()) NOT NULL
+);
 
-INSERT INTO users (id, email, password)
-VALUES ('01', 'maria@email.com', "12345A"),
-       ('02', 'joao@email.com', "54321B"),
-       ('03', 'pedro@email.com', "C15234");
+INSERT INTO users (id, name, email, password)
+VALUES ('01', 'Maria', 'maria@email.com', "12345A"),
+       ('02', 'Joao', 'joao@email.com', "54321B"),
+       ('03', 'Pedro', 'pedro@email.com', "C15234");
 
        
 SELECT * FROM users;
 
-CREATE TABLE
-    products (
-        id TEXT PRIMARY KEY UNIQUE NOT NULL,
-        name TEXT NOT NULL,
-        price REAL NOT NULL,
-        category TEXT NOT NULL
-    );
+CREATE TABLE products (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    description TEXT NOT NULL,
+    category TEXT NOT NULL,
+    image_url TEXT NOT NULL
+);
 
-INSERT INTO products (id, name, price, category)
-VALUES ('01', 'Bolo de chocolate', 30, 'Comida'),
-       ('02', 'Bolo de cenoura', 35, 'Comida'),
-       ('03', 'Espatula', 80, 'Acessorio'),
-       ('04', 'Colher', 50, 'Acessorio'),
-       ('05', 'Avental', 200, 'Roupa');
+INSERT INTO     products (id, name, price, description, category, image_url)
+VALUES ('01', 'Bolo de chocolate', 30, 'Massa Diet', 'Comida', 'https://picsum.photos/200'),
+       ('02', 'Bolo de cenoura', 35, 'Vegano', 'Comida', 'https://picsum.photos/200'),
+       ('03', 'Espatula', 80, 'Silicone', 'Acessorio', 'https://picsum.photos/200'),
+       ('04', 'Colher', 50, 'Madeira', 'Acessorio', 'https://picsum.photos/200'),
+       ('05', 'Avental', 200, 'Customizado', 'Roupa', 'https://picsum.photos/200');
 
 
 SELECT * FROM products;
@@ -41,9 +43,9 @@ SELECT * FROM products;
 SELECT * FROM products
 WHERE name='Bolo de cenoura';
 
-INSERT INTO users VALUES ('04','joana@gmail.com','D12354');
+INSERT INTO users(id, name, email, password) VALUES ('04','Joana', 'joana@gmail.com','D12354');
 
-INSERT INTO products VALUES ('06', 'Luva',20, 'Roupa');
+INSERT INTO products(id, name, price, description, category, image_url) VALUES ('06', 'Luva', 20, 'Borracha', 'Roupa', 'https://picsum.photos/200');
 
 SELECT * FROM products
 WHERE id='04';
@@ -74,28 +76,26 @@ SELECT * FROM products
 WHERE price BETWEEN 20 AND 30
 ORDER BY price ASC;
 
-CREATE TABLE purchases (
-    id TEXT PRIMARY KEY UNIQUE NOT NULL, 
+CREATE TABLE purchases(
+    id TEXT PRIMARY KEY UNIQUE NOT NULL,
+    buyer_id TEXT NOT NULL,
     total_price REAL NOT NULL,
-    paid INTEGER NOT NULL, 
-    delivered_at TEXT, 
-    buyer_id TEXT NOT NULL, 
+    created_at TEXT DEFAULT (DATETIME()) NOT NULL,
+    paid INTEGER NOT NULL,
     FOREIGN KEY (buyer_id) REFERENCES users(id)
 );
 
-
-INSERT INTO purchases (id, total_price, paid, delivered_at, buyer_id)
+INSERT INTO purchases (id, buyer_id, total_price, paid)
 VALUES 
-    ('01', 60, 0, NULL, '01'), 
-    ('02', 80, 1, NULL, '01'), 
-    ('03', 50, 0, NULL, '02'), 
-    ('04', 70, 0, NULL, '02'), 
-    ('05', 200, 0, NULL, '03'), 
-    ('06', 80, 0, NULL, '03');
+    ('01', '01', 60, 0 ), 
+    ('02', '01', 80, 1), 
+    ('03', '01', 50, 0), 
+    ('04', '01', 70, 0), 
+    ('05', '03',  200, 0 ), 
+    ('06', '03', 80, 0);
 
 UPDATE purchases
-SET delivered_at = DATETIME('now'),
-    paid = 1
+SET paid = 1
 WHERE id = '02';
 
 SELECT * FROM purchases

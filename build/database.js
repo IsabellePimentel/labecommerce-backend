@@ -1,27 +1,43 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserByEmail = exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = exports.purchases = exports.products = exports.users = void 0;
+exports.getPurchaseById = exports.getUserByEmail = exports.getUserById = exports.deleteProductById = exports.deleteUserById = exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.getProductById = exports.getAllProducts = exports.createProduct = exports.getAllUsers = exports.createUser = exports.purchases = exports.products = exports.users = void 0;
+const knex_1 = require("./database/knex");
 const types_1 = require("./types");
 exports.users = [{
         id: "01",
+        name: "bananinha",
         email: "Bananinha@teste.com",
         password: "54321",
     },
     {
         id: "02",
+        name: "pedro",
         email: "pedro@teste.com",
         password: "123456",
     }];
 exports.products = [{
         id: "01",
         name: "chocolate",
+        description: "teste",
         price: 30.22,
         category: types_1.Category.FOOD,
+        image_url: "teste"
     }, {
         id: "02",
         name: "Doce de Leite",
+        description: "teste",
         price: 40.23,
         category: types_1.Category.FOOD,
+        image_url: "teste"
     }];
 exports.purchases = [{
         userId: "01",
@@ -34,66 +50,56 @@ exports.purchases = [{
         quantity: 1,
         totalPrice: 30.22,
     }];
-const createUser = (idUser, emailUser, passwordUser) => {
-    let newUser = {
-        id: idUser,
-        email: emailUser,
-        password: passwordUser
-    };
-    exports.users.push(newUser);
-};
+const createUser = (idUser, name, emailUser, passwordUser) => __awaiter(void 0, void 0, void 0, function* () {
+    yield knex_1.db.raw(`
+            INSERT INTO users(id, name, email, password)
+            VALUES("${idUser}", "${name}", "${emailUser}", "${passwordUser}");
+        `);
+});
 exports.createUser = createUser;
-const getAllUsers = () => {
-    return exports.users;
-};
+const getAllUsers = () => __awaiter(void 0, void 0, void 0, function* () {
+    const users = yield knex_1.db.raw(`SELECT * FROM users;`);
+    return users;
+});
 exports.getAllUsers = getAllUsers;
-const createProduct = (id, name, price, category) => {
-    const newProduct = {
-        id: id,
-        name: name,
-        price: price,
-        category: category
-    };
-    exports.products.push(newProduct);
-};
+const createProduct = (id, name, description, price, category, image_url) => __awaiter(void 0, void 0, void 0, function* () {
+    yield knex_1.db.raw(`
+    INSERT INTO products(id, name, description, price, category, image_url )
+    VALUES("${id}", "${name}", "${description}", "${price}", "${category}", "${image_url}");
+`);
+});
 exports.createProduct = createProduct;
-const getAllProducts = () => {
-    return exports.products;
-};
+const getAllProducts = () => __awaiter(void 0, void 0, void 0, function* () {
+    const products = yield knex_1.db.raw(`SELECT * FROM products;`);
+    return products;
+});
 exports.getAllProducts = getAllProducts;
-const getProductById = (idToSearch) => {
-    const produto = exports.products.find((product) => {
-        if (product.id === idToSearch) {
-            return product;
-        }
-    });
-    return produto;
-};
+const getProductById = (idToSearch) => __awaiter(void 0, void 0, void 0, function* () {
+    const products = yield knex_1.db.raw(`SELECT * FROM products WHERE id = "${idToSearch}";`);
+    return products === null || products === void 0 ? void 0 : products[0];
+});
 exports.getProductById = getProductById;
-const queryProductsByName = (q) => {
-    const produtos = exports.products.filter((product) => {
-        return (product.name.toLowerCase().includes(q.toLowerCase()));
-    });
+const queryProductsByName = (q) => __awaiter(void 0, void 0, void 0, function* () {
+    const produtos = yield knex_1.db.raw(`
+        SELECT * FROM products 
+        WHERE UPPER(name) like UPPER("%${q}%");
+    `);
     return produtos;
-};
+});
 exports.queryProductsByName = queryProductsByName;
-const createPurchase = (userId, productId, quantity, totalPrice) => {
-    const newPurchase = {
-        userId,
-        productId,
-        quantity,
-        totalPrice
-    };
-    exports.purchases.push(newPurchase);
+const createPurchase = (userId, buyer_id, total_price, paid) => __awaiter(void 0, void 0, void 0, function* () {
+    yield knex_1.db.raw(`
+            INSERT INTO purchases (id, buyer_id, total_price, paid)
+            VALUES ("${userId}","${buyer_id}","${total_price}","${paid}")
+        ;`);
     console.log("Compra realizada com sucesso");
     console.table(exports.purchases);
-};
+});
 exports.createPurchase = createPurchase;
-const getAllPurchasesFromUserId = (userIdToSearch) => {
-    return exports.purchases.filter((purchase) => {
-        return (purchase.userId.toLowerCase().includes(userIdToSearch.toLowerCase()));
-    });
-};
+const getAllPurchasesFromUserId = (userIdToSearch) => __awaiter(void 0, void 0, void 0, function* () {
+    const purchases = yield knex_1.db.raw(`SELECT * FROM purchases WHERE buyer_id = "${userIdToSearch}";`);
+    return purchases;
+});
 exports.getAllPurchasesFromUserId = getAllPurchasesFromUserId;
 const deleteUserById = (id) => {
     const userIndex = exports.users.findIndex((user) => {
@@ -113,22 +119,19 @@ const deleteProductById = (id) => {
     }
 };
 exports.deleteProductById = deleteProductById;
-const getUserById = (id) => {
-    const user = exports.users.find((user) => {
-        if (user.id === id) {
-            return user;
-        }
-    });
-    return user;
-};
+const getUserById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`SELECT * FROM users WHERE id = "${id}";`);
+    return user === null || user === void 0 ? void 0 : user[0];
+});
 exports.getUserById = getUserById;
-const getUserByEmail = (email) => {
-    const user = exports.users.find((user) => {
-        if (user.email === email) {
-            return user;
-        }
-    });
-    return user;
-};
+const getUserByEmail = (email) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`SELECT * FROM users WHERE email = "${email}";`);
+    return user === null || user === void 0 ? void 0 : user[0];
+});
 exports.getUserByEmail = getUserByEmail;
+const getPurchaseById = (id) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield knex_1.db.raw(`SELECT * FROM purchases WHERE id = "${id}";`);
+    return user === null || user === void 0 ? void 0 : user[0];
+});
+exports.getPurchaseById = getPurchaseById;
 //# sourceMappingURL=database.js.map
